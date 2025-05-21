@@ -40,6 +40,17 @@ else
     SKIPPED+=("speedtest")
 fi
 
+# --- Установка Docker ---
+if ! command -v docker &>/dev/null; then
+    echo -e "${YELLOW}Устанавливаем Docker...${NC}"
+    curl -fsSL https://get.docker.com | bash
+    INSTALLED+=("docker")
+    ACTIONS+=("Установка Docker")
+else
+    echo -e "${GREEN}Docker уже установлен${NC}"
+    SKIPPED+=("docker")
+fi
+
 # --- Настройка SSH ---
 mkdir -p ~/.ssh
 chmod 700 ~/.ssh
