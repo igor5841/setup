@@ -2,7 +2,7 @@
 
 ## Как запустить скрипт ##
 Скопируйте команду и вставьте её на сервере:
-<pre> ```wget -qO setup.sh "https://raw.githubusercontent.com/igor5841/setup/refs/heads/main/setup.sh" && chmod +x setup.sh && ./setup.sh ``` </pre>
+<pre> wget -qO setup.sh "https://raw.githubusercontent.com/igor5841/setup/refs/heads/main/setup.sh" && chmod +x setup.sh && ./setup.sh </pre>
 
 ## Пошагово, как работает скрипт и что он делает? ##
 1. Сначала скрипт обновляет систему командами: **apt update**, затем **apt upgrade**
