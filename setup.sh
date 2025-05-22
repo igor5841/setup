@@ -14,6 +14,7 @@ ALL_SOFTWARE_OPTIONS=(
   "docker:Docker"
   "vnstat:VnStat (мониторинг трафика)"
   "btop:btop (системный монитор)"
+  "jdk21:JDK 21 (Для Minecraft 1.21 и выше)"
 )
 
 # --- Меню выбора режима ---
@@ -30,18 +31,19 @@ if [[ "$INSTALL_MODE" == "2" ]]; then
 
   TEMPFILE=$(mktemp)
 
-  dialog --checklist "Выберите пакеты для установки (пробел — выбрать):" 15 50 8 \
+  dialog --checklist "Выберите пакеты для установки (пробел — выбрать):" 15 50 9 \
     base "Базовые пакеты (curl, nano, htop, wget)" on \
     speedtest "Speedtest CLI" off \
     docker "Docker" off \
     vnstat "VnStat (мониторинг трафика)" off \
     btop "btop (системный монитор)" off \
+    jdk21 "JDK 21 (Для Minecraft 1.21 и выше)" off \
     2>"$TEMPFILE"
 
   SELECTED_PACKAGES=$(<"$TEMPFILE")
   rm -f "$TEMPFILE"
 else
-  SELECTED_PACKAGES="base speedtest docker vnstat btop"
+  SELECTED_PACKAGES="base speedtest docker vnstat btop jdk21"
 fi
 
 sudo apt update && sudo apt upgrade -y
@@ -56,6 +58,19 @@ if ! command -v snap &>/dev/null; then
 else
   echo -e "${GREEN}snap уже установлен${NC}"
   SKIPPED+=("snapd")
+fi
+
+# --- Установка JDK 21 ---
+if [[ "$SELECTED_PACKAGES" == *jdk21* ]]; then
+  if ! java -version 2>&1 | grep -q "21"; then
+    echo -e "${YELLOW}Устанавливаем OpenJDK 21...${NC}"
+    sudo apt install -y openjdk-21-jdk
+    INSTALLED+=("openjdk-21-jdk")
+    ACTIONS+=("Установка OpenJDK 21")
+  else
+    echo -e "${GREEN}OpenJDK 21 уже установлен${NC}"
+    SKIPPED+=("openjdk-21-jdk")
+  fi
 fi
 
 # --- Установка базовых пакетов ---
