@@ -13,6 +13,7 @@ ALL_SOFTWARE_OPTIONS=(
   "speedtest:Speedtest"
   "docker:Docker"
   "vnstat:VnStat (мониторинг трафика)"
+  "btop:btop (системный монитор)"
 )
 
 # --- Меню выбора режима ---
@@ -34,16 +35,28 @@ if [[ "$INSTALL_MODE" == "2" ]]; then
     speedtest "Speedtest CLI" off \
     docker "Docker" off \
     vnstat "VnStat (мониторинг трафика)" off \
+    btop "btop (системный монитор)" off \
     2>"$TEMPFILE"
 
   SELECTED_PACKAGES=$(<"$TEMPFILE")
   rm -f "$TEMPFILE"
 else
-  SELECTED_PACKAGES="base speedtest docker vnstat"
+  SELECTED_PACKAGES="base speedtest docker vnstat btop"
 fi
 
 sudo apt update && sudo apt upgrade -y
 ACTIONS+=("Обновление системы")
+
+# --- Установка snapd (обязательный пакет) ---
+echo -e "${YELLOW}Проверка и установка snapd...${NC}"
+if ! command -v snap &>/dev/null; then
+  sudo apt install -y snapd
+  INSTALLED+=("snapd")
+  ACTIONS+=("Установка snapd")
+else
+  echo -e "${GREEN}snap уже установлен${NC}"
+  SKIPPED+=("snapd")
+fi
 
 # --- Установка базовых пакетов ---
 if [[ "$SELECTED_PACKAGES" == *base* ]]; then
@@ -60,6 +73,19 @@ if [[ "$SELECTED_PACKAGES" == *base* ]]; then
     fi
   done
   ACTIONS+=("Установка базовых пакетов: curl, nano, htop, wget")
+fi
+
+# --- Установка btop (необязательный) ---
+if [[ "$SELECTED_PACKAGES" == *btop* ]]; then
+  if ! command -v btop &>/dev/null; then
+    echo -e "${YELLOW}Устанавливаем btop через snap...${NC}"
+    sudo snap install btop
+    INSTALLED+=("btop")
+    ACTIONS+=("Установка btop через snap")
+  else
+    echo -e "${GREEN}btop уже установлен${NC}"
+    SKIPPED+=("btop")
+  fi
 fi
 
 # --- Установка vnStat ---
@@ -133,9 +159,16 @@ fi
 
 if [[ "$SETUP_SSH" == true ]]; then
   echo -e "${YELLOW}Настройка SSH: отключаем пароль и разрешаем root-доступ...${NC}"
-  sudo sed -i 's/^#\?PasswordAuthentication .*/PasswordAuthentication no/' /etc/ssh/sshd_config
-  sudo sed -i 's/^#\?PermitRootLogin .*/PermitRootLogin yes/' /etc/ssh/sshd_config
-  sudo systemctl restart ssh || sudo systemctl restart sshd
+  sudo sed -i 's/^#\?PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config || echo 'PasswordAuthentication no' | sudo tee -a /etc/ssh/sshd_config
+  sudo sed -i 's/^#\?PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config || echo 'PermitRootLogin yes' | sudo tee -a /etc/ssh/sshd_config
+
+  if [[ -f "/etc/ssh/sshd_config.d/50-cloud-init.conf" ]]; then
+    echo -e "${YELLOW}Удаляем конфликтующий файл 50-cloud-init.conf...${NC}"
+    sudo rm /etc/ssh/sshd_config.d/50-cloud-init.conf
+    ACTIONS+=("Удалён /etc/ssh/sshd_config.d/50-cloud-init.conf для избежания конфликта пароля")
+  fi
+
+  sudo systemctl restart ssh || sudo systemctl restart sshd || sudo service ssh restart
   ACTIONS+=("Добавлен SSH ключ, отключен вход по паролю, разрешен root-доступ, перезапущен SSH")
 fi
 
@@ -151,5 +184,8 @@ done
 if [[ -f "id_rsa" && -f "id_rsa.pub" ]]; then
   echo -e "\n${YELLOW}ВНИМАНИЕ: НЕ ЗАБУДЬТЕ СКАЧАТЬ ФАЙЛЫ id_rsa И id_rsa.pub. ЭТО ВАШИ SSH-КЛЮЧИ!${NC}"
 fi
+
+# --- Подтверждение наличия snap ---
+echo -e "\n${GREEN}snap установлен и готов к использованию.${NC}"
 
 exit 0
