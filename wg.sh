@@ -2,9 +2,22 @@
 
 set -e
 
-# Step 1: Request password
-read -s -p "Введите пароль для WG-Easy: " WG_PASSWORD
-echo ""
+# Step 1: Ask user to choose password option
+echo "Пароль для входа в админку сгенерировать или ввёдете свой?:"
+echo "1. Сгенерировать пароль автоматически"
+echo "2. Ввести свой пароль"
+read -p "Введите номер (1 или 2): " CHOICE
+
+if [[ "$CHOICE" == "1" ]]; then
+    WG_PASSWORD=$(< /dev/urandom tr -dc 'A-Za-z0-9!@#$%^&*()_+=' | head -c15)
+    echo -e "\nАвтоматически сгенерированный пароль: $WG_PASSWORD"
+elif [[ "$CHOICE" == "2" ]]; then
+    read -s -p "Введите пароль для WG-Easy (ввод скрыт): " WG_PASSWORD
+    echo ""
+else
+    echo "Неверный выбор. Завершение."
+    exit 1
+fi
 
 # Step 2: Get public IP and ask for confirmation
 DEFAULT_IP=$(curl -s ifconfig.me)
@@ -35,7 +48,6 @@ HASH=$(htpasswd -nbB user "$WG_PASSWORD" | cut -d ":" -f2)
 HASH_ESCAPED=${HASH//\$/\$\$}  # Escape '$' for YAML
 
 # Step 8: Update docker-compose.yml:
-# Uncomment PASSWORD=, replace with PASSWORD_HASH, set WG_HOST
 sed -i \
     -e 's/^\s*#\s*-\s*PASSWORD=/      - PASSWORD_HASH=/g' \
     -e "s|PASSWORD_HASH=.*|PASSWORD_HASH=$HASH_ESCAPED|g" \
@@ -45,6 +57,6 @@ sed -i \
 docker compose up -d
 
 # Step 10: Final output
-echo "\nWG-Easy успешно установлен и запущен."
+echo -e "\nWG-Easy успешно установлен и запущен."
 echo "Доступ: http://$WG_HOST:51821"
 echo "Пароль: $WG_PASSWORD"
