@@ -7,3 +7,5 @@
 <pre> wget -qO fail2ban.sh "https://raw.githubusercontent.com/igor5841/setup/refs/heads/main/fail2ban.sh" && chmod +x fail2ban.sh && ./fail2ban.sh </pre>
 4. Установка SOCKS5 прокси (для Telegram и других приложений):
 <pre> wget -qO proxy.sh "https://raw.githubusercontent.com/igor5841/setup/refs/heads/main/proxy.sh" && chmod +x proxy.sh && ./proxy.sh </pre>
+5. Установка Matrix Element (Звонки только через Classic клиент). Регистрация и звонки в X клиенте не работают. Федерацию проходит.
+6. <pre> wget -qO matrix.sh "https://raw.githubusercontent.com/igor5841/setup/refs/heads/main/matrix.sh" && chmod +x matrix.sh && ./matrix.sh </pre>
